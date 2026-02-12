@@ -110,10 +110,9 @@ for i = 1 : nt,
       unew(1)   = 0.0;
       unew(end) = 0.0;
     end    
-   
-  %{
-   MODIFIED LEAP FROG SCHEME
-  }%
+
+  % ---------------  MODIFIED LEAP FROG SCHEME -----------------
+
    case {'modLeapFrog','mLF'}
     if i==1
       unew(2:end)=u(2:end)-sigma*(u(2:end)-u(1:end-1));
