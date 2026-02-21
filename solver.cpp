@@ -1,4 +1,3 @@
-// ns_cavity_project.cpp
 // ------------------------------------------------------------
 // 2D incompressible Navier–Stokes (lid-driven cavity) on a MAC grid
 // Projection (fractional-step) method:
@@ -31,18 +30,22 @@
 // - For fair Jacobi vs SOR comparisons: same Nx,Ny, Re, dt policy, tol, maxIters, checkEvery.
 // - Disable VTK while measuring performance (I/O dominates).
 
-#include<bits/stdc++.h>
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <vector>
+
+using namespace std;
+namespace fs = std::filesystem;
 
 #if defined(__x86_64__) || defined(_M_X64)
   #include <x86intrin.h>
@@ -54,7 +57,6 @@
   static inline uint64_t rdtsc_serialized() { return 0; }
 #endif
 
-// ------------------------------ Small 2D array ------------------------------
 struct Field {
   int nx = 0, ny = 0;
   std::vector<double> a;
@@ -99,10 +101,10 @@ static inline void apply_neumann_bc(Field &q, int Nx, int Ny) {
     q(i, Ny+1) = q(i, Ny);
   }
   // corners
-  q(0, 0)         = q(1, 1);
-  q(0, Ny+1)      = q(1, Ny);
-  q(Nx+1, 0)      = q(Nx, 1);
-  q(Nx+1, Ny+1)   = q(Nx, Ny);
+  q(0, 0)       = q(1, 1);
+  q(0, Ny+1)    = q(1, Ny);
+  q(Nx+1, 0)    = q(Nx, 1);
+  q(Nx+1, Ny+1) = q(Nx, Ny);
 }
 
 static inline void remove_mean(Field &q, int Nx, int Ny) {
@@ -175,14 +177,12 @@ struct PoissonJacobi final : public PoissonSolver {
     apply_neumann_bc(phi, Nx, Ny);
     remove_mean(phi, Nx, Ny);
 
-    double rinf = std::numeric_limits<double>::infinity();
+    double rinf = poisson_residual_inf(phi, rhs, Nx, Ny, dx, dy);
     double maxDelta = 0.0;
     int it = 0;
 
-    // Initial residual (optional but nice)
-    rinf = poisson_residual_inf(phi, rhs, Nx, Ny, dx, dy);
-
-    for (it = 1; it <= maxIters; ++it) {
+    for (int k = 1; k <= maxIters; ++k) {
+      it = k;
       apply_neumann_bc(phi, Nx, Ny);
 
       // compute next
@@ -210,7 +210,6 @@ struct PoissonJacobi final : public PoissonSolver {
 
       // cheap early stop if requested
       if (deltaTol > 0.0 && maxDelta < deltaTol) {
-        // still compute residual at the end for reporting
         break;
       }
 
@@ -221,7 +220,7 @@ struct PoissonJacobi final : public PoissonSolver {
       }
     }
 
-    // ensure residual is available for reporting (and fairness)
+    // ensure residual is available for reporting
     rinf = poisson_residual_inf(phi, rhs, Nx, Ny, dx, dy);
     apply_neumann_bc(phi, Nx, Ny);
 
@@ -247,13 +246,12 @@ struct PoissonSOR final : public PoissonSolver {
     apply_neumann_bc(phi, Nx, Ny);
     remove_mean(phi, Nx, Ny);
 
-    double rinf = std::numeric_limits<double>::infinity();
+    double rinf = poisson_residual_inf(phi, rhs, Nx, Ny, dx, dy);
     double maxDelta = 0.0;
     int it = 0;
 
-    rinf = poisson_residual_inf(phi, rhs, Nx, Ny, dx, dy);
-
-    for (it = 1; it <= maxIters; ++it) {
+    for (int k = 1; k <= maxIters; ++k) {
+      it = k;
       apply_neumann_bc(phi, Nx, Ny);
 
       maxDelta = 0.0;
@@ -298,6 +296,10 @@ struct SimConfig {
   double U_lid = 1.0;
   double Re = 400.0;
 
+  // output directories
+  std::string vtkDir = "vtk_out";
+  std::string csvDir = "csv_out";
+
   int steps = 5000;
   int vtkEvery = 200;
   bool writeVtk = true;
@@ -311,7 +313,7 @@ struct SimConfig {
   // Poisson controls
   int poissonMaxIters = 8000;
   double poissonTol = 1e-6;     // residual inf-norm tolerance
-  int poissonCheckEvery = 25;   // compute residual every K iterations (big speed win)
+  int poissonCheckEvery = 25;   // compute residual every K iterations
   double poissonDeltaTol = 0.0; // optional early stop on update size; 0 disables
 
   double sorOmega = 1.7;
@@ -367,6 +369,14 @@ struct Simulation {
     v.resize(cfg.Nx + 2, cfg.Ny + 1, 0.0);
     us.resize(cfg.Nx + 1, cfg.Ny + 2, 0.0);
     vs.resize(cfg.Nx + 2, cfg.Ny + 1, 0.0);
+
+    // Create output folders automatically
+    if (cfg.writeVtk) {
+      fs::create_directories(cfg.vtkDir);
+    }
+    if (cfg.writeCenterline || cfg.writeGhia) {
+      fs::create_directories(cfg.csvDir);
+    }
   }
 
   void apply_velocity_bc(Field &uu, Field &vv) {
@@ -403,6 +413,7 @@ struct Simulation {
     // u(i,j) at (x=i*dx, y=(j-0.5)dy)
     return 0.25 * (vv(i, j) + vv(i+1, j) + vv(i, j-1) + vv(i+1, j-1));
   }
+
   inline double u_at_v(int i, int j, const Field &uu) const {
     // v(i,j) at (x=(i-0.5)dx, y=j*dy)
     return 0.25 * (uu(i, j) + uu(i, j+1) + uu(i-1, j) + uu(i-1, j+1));
@@ -411,6 +422,7 @@ struct Simulation {
   inline double ddx_upwind(double qm1, double q0, double qp1, double vel, double h) const {
     return (vel > 0.0) ? (q0 - qm1) / h : (qp1 - q0) / h;
   }
+
   inline double ddy_upwind(double qm1, double q0, double qp1, double vel, double h) const {
     return (vel > 0.0) ? (q0 - qm1) / h : (qp1 - q0) / h;
   }
@@ -445,8 +457,13 @@ struct Simulation {
   }
 
   void write_vtk(int frame) const {
+    if (!cfg.writeVtk) return;
+
+    // Ensure directory exists (safe if already exists)
+    fs::create_directories(cfg.vtkDir);
+
     std::ostringstream fn;
-    fn << "out_" << std::setw(6) << std::setfill('0') << frame << ".vtk";
+    fn << cfg.vtkDir << "/out_" << std::setw(6) << std::setfill('0') << frame << ".vtk";
     std::ofstream out(fn.str());
     if (!out) return;
 
@@ -531,9 +548,11 @@ struct Simulation {
   }
 
   void write_centerlines_csv() const {
+    fs::create_directories(cfg.csvDir);
+
     // u(x=0.5,y) on Ny points (cell centers), v(x,y=0.5) on Nx points
     {
-      std::ofstream out(cfg.prefix + "_u_x0p5.csv");
+      std::ofstream out(cfg.csvDir + "/" + cfg.prefix + "_u_x0p5.csv");
       if (out) {
         out << "y,u\n";
         for (int j = 1; j <= cfg.Ny; ++j) {
@@ -544,7 +563,7 @@ struct Simulation {
       }
     }
     {
-      std::ofstream out(cfg.prefix + "_v_y0p5.csv");
+      std::ofstream out(cfg.csvDir + "/" + cfg.prefix + "_v_y0p5.csv");
       if (out) {
         out << "x,v\n";
         for (int i = 1; i <= cfg.Nx; ++i) {
@@ -557,6 +576,8 @@ struct Simulation {
   }
 
   void write_ghia_csv() const {
+    fs::create_directories(cfg.csvDir);
+
     // Standard Ghia sample coordinates (Table I for u at x=0.5, Table II for v at y=0.5)
     static const double yPts[] = {
       1.0000, 0.9766, 0.9688, 0.9609, 0.9531, 0.8516, 0.7344, 0.6172,
@@ -568,7 +589,7 @@ struct Simulation {
     };
 
     {
-      std::ofstream out(cfg.prefix + "_ghia_u.csv");
+      std::ofstream out(cfg.csvDir + "/" + cfg.prefix + "_ghia_u.csv");
       if (out) {
         out << "y,u_sim\n";
         for (double y : yPts) {
@@ -581,7 +602,7 @@ struct Simulation {
       }
     }
     {
-      std::ofstream out(cfg.prefix + "_ghia_v.csv");
+      std::ofstream out(cfg.csvDir + "/" + cfg.prefix + "_ghia_v.csv");
       if (out) {
         out << "x,v_sim\n";
         for (double x : xPts) {
@@ -765,13 +786,15 @@ struct Simulation {
 
     if (cfg.writeCenterline) {
       write_centerlines_csv();
-      std::cerr << "Wrote centerlines: " << cfg.prefix << "_u_x0p5.csv and "
-                << cfg.prefix << "_v_y0p5.csv\n";
+      std::cerr << "Wrote centerlines: "
+                << cfg.csvDir << "/" << cfg.prefix << "_u_x0p5.csv and "
+                << cfg.csvDir << "/" << cfg.prefix << "_v_y0p5.csv\n";
     }
     if (cfg.writeGhia) {
       write_ghia_csv();
-      std::cerr << "Wrote Ghia samples: " << cfg.prefix << "_ghia_u.csv and "
-                << cfg.prefix << "_ghia_v.csv\n";
+      std::cerr << "Wrote Ghia samples: "
+                << cfg.csvDir << "/" << cfg.prefix << "_ghia_u.csv and "
+                << cfg.csvDir << "/" << cfg.prefix << "_ghia_v.csv\n";
     }
 
     return st;
@@ -815,6 +838,8 @@ Time:
 Output:
   --noVtk                 disable VTK output (recommended for timing)
   --vtkEvery K            write VTK every K steps (default 200)
+  --vtkDir DIR            folder for VTK output (default vtk_out)
+  --csvDir DIR            folder for CSV output (default csv_out)
   --centerline            write centerline CSVs at end
   --ghia                  write Ghia sample-point CSVs at end
   --prefix NAME           prefix for CSV outputs (default "run")
@@ -867,6 +892,8 @@ int main(int argc, char **argv) {
 
     else if (arg == "--noVtk") cfg.writeVtk = false;
     else if (arg == "--vtkEvery") cfg.vtkEvery = std::atoi(need(i, arg).c_str());
+    else if (arg == "--vtkDir") cfg.vtkDir = need(i, arg);
+    else if (arg == "--csvDir") cfg.csvDir = need(i, arg);
 
     else if (arg == "--centerline") cfg.writeCenterline = true;
     else if (arg == "--ghia") cfg.writeGhia = true;
@@ -884,7 +911,8 @@ int main(int argc, char **argv) {
   }
 
   auto run_one = [&](int N) {
-    cfg.Nx = N; cfg.Ny = N;
+    cfg.Nx = N;
+    cfg.Ny = N;
 
     PoissonJacobi jacobi;
     PoissonSOR sor(cfg.sorOmega);
@@ -908,6 +936,8 @@ int main(int argc, char **argv) {
               << " steps=" << cfg.steps
               << " warmup=" << cfg.warmupSteps
               << " VTK=" << (cfg.writeVtk ? "on" : "off")
+              << " vtkDir=" << cfg.vtkDir
+              << " csvDir=" << cfg.csvDir
               << " ===\n";
 
     // For sweep: make prefixes unique if writing CSVs
