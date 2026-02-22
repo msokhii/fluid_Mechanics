@@ -8,12 +8,12 @@ EXE="./cavity"
 SRC="solver.cpp"
 
 RE=400
-STEPS=1000
-WARMUP=200
+STEPS=3500
+WARMUP=400
 
 TOL="1e-4"
-MAXITERS=2000
-CHECKEVERY=25
+MAXITERS=5000
+CHECKEVERY=15
 OMEGA=1.9
 
 # Grid sizes to compare
@@ -24,9 +24,9 @@ DO_TIMING_SWEEP=1      # no VTK, for fair timing comparison
 DO_REPORT_RUNS=1       # writes VTK + CSV for selected cases below
 
 # For report outputs (VTK/CSV), choose which cases to generate
-REPORT_SOLVERS=("sor")    # e.g. ("sor") or ("jacobi" "sor")
-REPORT_N_LIST=(128)       # e.g. (64 128)
-VTK_EVERY=200
+REPORT_SOLVERS=("jacobi" "sor")    # e.g. ("sor") or ("jacobi" "sor")
+REPORT_N_LIST=(32 64 128)       # e.g. (64 128)
+VTK_EVERY=100
 
 # Root output folder
 STAMP=$(date +"%Y%m%d_%H%M%S")
