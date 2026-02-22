@@ -1,0 +1,22 @@
+
+=== Run: N=128 Re=400 solver=sor tol=0.0001 maxIters=2000 checkEvery=25 deltaTol=0 omega=1.9 steps=1000 warmup=200 VTK=off vtkDir=vtk_out csvDir=csv_out ===
+step 50  max|div|=4.36374e-06  poisson iters=2000  res_inf=0.0010054  maxDelta=2.92865e-08
+step 100  max|div|=3.39786e-06  poisson iters=2000  res_inf=0.000839618  maxDelta=2.44574e-08
+step 150  max|div|=2.89867e-06  poisson iters=2000  res_inf=0.000732643  maxDelta=2.13413e-08
+step 200  max|div|=2.79972e-06  poisson iters=2000  res_inf=0.000716295  maxDelta=2.08651e-08
+step 250  max|div|=2.61076e-06  poisson iters=2000  res_inf=0.000663578  maxDelta=1.93295e-08
+step 300  max|div|=2.73704e-06  poisson iters=2000  res_inf=0.00069693  maxDelta=2.0301e-08
+step 350  max|div|=2.66094e-06  poisson iters=2000  res_inf=0.000678108  maxDelta=1.97527e-08
+step 400  max|div|=2.6058e-06  poisson iters=2000  res_inf=0.000659413  maxDelta=1.92082e-08
+step 450  max|div|=2.54669e-06  poisson iters=2000  res_inf=0.000640443  maxDelta=1.86556e-08
+step 500  max|div|=2.50058e-06  poisson iters=2000  res_inf=0.000625109  maxDelta=1.82089e-08
+step 550  max|div|=2.47418e-06  poisson iters=2000  res_inf=0.000615013  maxDelta=1.79148e-08
+step 600  max|div|=2.45194e-06  poisson iters=2000  res_inf=0.000608733  maxDelta=1.77319e-08
+step 650  max|div|=2.43698e-06  poisson iters=2000  res_inf=0.000604393  maxDelta=1.76055e-08
+step 700  max|div|=2.4287e-06  poisson iters=2000  res_inf=0.000601914  maxDelta=1.75333e-08
+step 750  max|div|=2.42563e-06  poisson iters=2000  res_inf=0.000600865  maxDelta=1.75027e-08
+step 800  max|div|=2.42703e-06  poisson iters=2000  res_inf=0.000600965  maxDelta=1.75056e-08
+step 850  max|div|=2.43112e-06  poisson iters=2000  res_inf=0.000601818  maxDelta=1.75305e-08
+step 900  max|div|=2.43752e-06  poisson iters=2000  res_inf=0.000603309  maxDelta=1.75739e-08
+step 950  max|div|=2.44578e-06  poisson iters=2000  res_inf=0.000605309  maxDelta=1.76322e-08
+step 1000  max|div|=2.45529e-06  poisson iters=2000  res_inf=0.000607686  maxDelta=1.77014e-08

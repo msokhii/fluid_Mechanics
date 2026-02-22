@@ -1,0 +1,1 @@
+SUMMARY N=32 Re=400.000000 solver=jacobi avgStepSec=0.006887 avgPoissonSec=0.006856 avgStepCycles=22672524.490000 avgPoissonCycles=22571425.070000 avgPoissonIters=2000.000000 avgPoissonResInf=0.001255 avgPoissonMaxDelta=0.000000 maxDiv=0.000013

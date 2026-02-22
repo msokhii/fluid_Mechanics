@@ -1,0 +1,22 @@
+
+=== Run: N=64 Re=400 solver=jacobi tol=0.0001 maxIters=2000 checkEvery=25 deltaTol=0 omega=1.9 steps=1000 warmup=200 VTK=off vtkDir=vtk_out csvDir=csv_out ===
+step 50  max|div|=0.00123755  poisson iters=2000  res_inf=0.135544  maxDelta=8.27953e-06
+step 100  max|div|=0.000891955  poisson iters=2000  res_inf=0.102275  maxDelta=6.24706e-06
+step 150  max|div|=0.000759502  poisson iters=2000  res_inf=0.0885663  maxDelta=5.40955e-06
+step 200  max|div|=0.000703359  poisson iters=2000  res_inf=0.0826091  maxDelta=5.04552e-06
+step 250  max|div|=0.000682229  poisson iters=2000  res_inf=0.0803512  maxDelta=4.90749e-06
+step 300  max|div|=0.000677158  poisson iters=2000  res_inf=0.0798325  maxDelta=4.87571e-06
+step 350  max|div|=0.000679375  poisson iters=2000  res_inf=0.0801013  maxDelta=4.89205e-06
+step 400  max|div|=0.000684717  poisson iters=2000  res_inf=0.0807258  maxDelta=4.93014e-06
+step 450  max|div|=0.000691435  poisson iters=2000  res_inf=0.0814997  maxDelta=4.97736e-06
+step 500  max|div|=0.000698624  poisson iters=2000  res_inf=0.0823368  maxDelta=5.02844e-06
+step 550  max|div|=0.000705928  poisson iters=2000  res_inf=0.0831907  maxDelta=5.08056e-06
+step 600  max|div|=0.000713172  poisson iters=2000  res_inf=0.0840394  maxDelta=5.13236e-06
+step 650  max|div|=0.000720209  poisson iters=2000  res_inf=0.0848695  maxDelta=5.18303e-06
+step 700  max|div|=0.000726968  poisson iters=2000  res_inf=0.0856748  maxDelta=5.23218e-06
+step 750  max|div|=0.000733433  poisson iters=2000  res_inf=0.0864473  maxDelta=5.27934e-06
+step 800  max|div|=0.000739576  poisson iters=2000  res_inf=0.0871836  maxDelta=5.32428e-06
+step 850  max|div|=0.000745354  poisson iters=2000  res_inf=0.0878781  maxDelta=5.36667e-06
+step 900  max|div|=0.000750757  poisson iters=2000  res_inf=0.0885309  maxDelta=5.40651e-06
+step 950  max|div|=0.000755765  poisson iters=2000  res_inf=0.0891407  maxDelta=5.44373e-06
+step 1000  max|div|=0.000760418  poisson iters=2000  res_inf=0.0897082  maxDelta=5.47837e-06

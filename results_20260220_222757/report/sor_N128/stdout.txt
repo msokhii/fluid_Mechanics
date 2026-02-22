@@ -1,0 +1,1 @@
+SUMMARY N=128 Re=400.000000 solver=sor avgStepSec=0.359131 avgPoissonSec=0.358630 avgStepCycles=1182370265.885000 avgPoissonCycles=1180720102.612500 avgPoissonIters=2000.000000 avgPoissonResInf=0.000630 avgPoissonMaxDelta=0.000000 maxDiv=0.000002

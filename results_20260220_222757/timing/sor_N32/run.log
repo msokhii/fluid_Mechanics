@@ -1,0 +1,22 @@
+
+=== Run: N=32 Re=400 solver=sor tol=0.0001 maxIters=2000 checkEvery=25 deltaTol=0 omega=1.9 steps=1000 warmup=200 VTK=off vtkDir=vtk_out csvDir=csv_out ===
+step 50  max|div|=8.76032e-07  poisson iters=250  res_inf=8.76032e-05  maxDelta=4.28294e-08
+step 100  max|div|=9.48437e-07  poisson iters=250  res_inf=9.48437e-05  maxDelta=4.63693e-08
+step 150  max|div|=2.69996e-07  poisson iters=275  res_inf=2.69996e-05  maxDelta=1.32002e-08
+step 200  max|div|=2.80469e-07  poisson iters=275  res_inf=2.80469e-05  maxDelta=1.37122e-08
+step 250  max|div|=2.88075e-07  poisson iters=275  res_inf=2.88075e-05  maxDelta=1.40841e-08
+step 300  max|div|=2.94018e-07  poisson iters=275  res_inf=2.94018e-05  maxDelta=1.43747e-08
+step 350  max|div|=2.98848e-07  poisson iters=275  res_inf=2.98848e-05  maxDelta=1.46108e-08
+step 400  max|div|=3.02891e-07  poisson iters=275  res_inf=3.02891e-05  maxDelta=1.48085e-08
+step 450  max|div|=3.06359e-07  poisson iters=275  res_inf=3.06359e-05  maxDelta=1.4978e-08
+step 500  max|div|=3.09366e-07  poisson iters=275  res_inf=3.09366e-05  maxDelta=1.51251e-08
+step 550  max|div|=3.12018e-07  poisson iters=275  res_inf=3.12018e-05  maxDelta=1.52547e-08
+step 600  max|div|=3.1436e-07  poisson iters=275  res_inf=3.1436e-05  maxDelta=1.53692e-08
+step 650  max|div|=3.16448e-07  poisson iters=275  res_inf=3.16448e-05  maxDelta=1.54713e-08
+step 700  max|div|=3.1831e-07  poisson iters=275  res_inf=3.1831e-05  maxDelta=1.55623e-08
+step 750  max|div|=3.19965e-07  poisson iters=275  res_inf=3.19965e-05  maxDelta=1.56432e-08
+step 800  max|div|=3.21441e-07  poisson iters=275  res_inf=3.21441e-05  maxDelta=1.57154e-08
+step 850  max|div|=3.22755e-07  poisson iters=275  res_inf=3.22755e-05  maxDelta=1.57797e-08
+step 900  max|div|=3.23924e-07  poisson iters=275  res_inf=3.23924e-05  maxDelta=1.58368e-08
+step 950  max|div|=3.24963e-07  poisson iters=275  res_inf=3.24963e-05  maxDelta=1.58876e-08
+step 1000  max|div|=3.25883e-07  poisson iters=275  res_inf=3.25883e-05  maxDelta=1.59326e-08

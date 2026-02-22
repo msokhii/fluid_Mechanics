@@ -5,7 +5,7 @@ set -euo pipefail
 # User settings (edit these)
 # =========================
 EXE="./cavity"
-SRC="ns_cavity_project.cpp"
+SRC="solver.cpp"
 
 RE=400
 STEPS=1000

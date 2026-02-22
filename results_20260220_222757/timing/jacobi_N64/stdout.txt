@@ -1,0 +1,1 @@
+SUMMARY N=64 Re=400.000000 solver=jacobi avgStepSec=0.027515 avgPoissonSec=0.027392 avgStepCycles=90586342.260000 avgPoissonCycles=90180725.355000 avgPoissonIters=2000.000000 avgPoissonResInf=0.084230 avgPoissonMaxDelta=0.000005 maxDiv=0.000760

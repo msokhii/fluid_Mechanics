@@ -1,0 +1,22 @@
+
+=== Run: N=64 Re=400 solver=sor tol=0.0001 maxIters=2000 checkEvery=25 deltaTol=0 omega=1.9 steps=1000 warmup=200 VTK=off vtkDir=vtk_out csvDir=csv_out ===
+step 50  max|div|=8.93416e-07  poisson iters=750  res_inf=9.78543e-05  maxDelta=1.15352e-08
+step 100  max|div|=8.36655e-07  poisson iters=750  res_inf=9.59346e-05  maxDelta=1.13089e-08
+step 150  max|div|=8.28294e-07  poisson iters=750  res_inf=9.65888e-05  maxDelta=1.1386e-08
+step 200  max|div|=8.31883e-07  poisson iters=750  res_inf=9.77045e-05  maxDelta=1.15175e-08
+step 250  max|div|=8.40539e-07  poisson iters=750  res_inf=9.89968e-05  maxDelta=1.16698e-08
+step 300  max|div|=5.65441e-07  poisson iters=775  res_inf=6.6662e-05  maxDelta=7.85819e-09
+step 350  max|div|=5.73307e-07  poisson iters=775  res_inf=6.75956e-05  maxDelta=7.96825e-09
+step 400  max|div|=5.81199e-07  poisson iters=775  res_inf=6.85218e-05  maxDelta=8.07743e-09
+step 450  max|div|=5.88957e-07  poisson iters=775  res_inf=6.9421e-05  maxDelta=8.18343e-09
+step 500  max|div|=5.96365e-07  poisson iters=775  res_inf=7.02856e-05  maxDelta=8.28535e-09
+step 550  max|div|=6.03403e-07  poisson iters=775  res_inf=7.11093e-05  maxDelta=8.38245e-09
+step 600  max|div|=6.10046e-07  poisson iters=775  res_inf=7.1888e-05  maxDelta=8.47424e-09
+step 650  max|div|=6.16261e-07  poisson iters=775  res_inf=7.26213e-05  maxDelta=8.56069e-09
+step 700  max|div|=6.22039e-07  poisson iters=775  res_inf=7.33098e-05  maxDelta=8.64185e-09
+step 750  max|div|=6.27427e-07  poisson iters=775  res_inf=7.39541e-05  maxDelta=8.7178e-09
+step 800  max|div|=6.32439e-07  poisson iters=775  res_inf=7.45553e-05  maxDelta=8.78867e-09
+step 850  max|div|=6.37089e-07  poisson iters=775  res_inf=7.51151e-05  maxDelta=8.85466e-09
+step 900  max|div|=6.41388e-07  poisson iters=775  res_inf=7.56356e-05  maxDelta=8.91601e-09
+step 950  max|div|=6.45343e-07  poisson iters=775  res_inf=7.61185e-05  maxDelta=8.97294e-09
+step 1000  max|div|=6.49002e-07  poisson iters=775  res_inf=7.65661e-05  maxDelta=9.0257e-09
