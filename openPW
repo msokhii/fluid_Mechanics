@@ -1,0 +1,4 @@
+set -euo pipefail
+
+cd ~/Downloads/ParaView-6.1.0-RC1-MPI-Linux-Python3.12-x86_64/bin
+./paraview

@@ -277,12 +277,12 @@ struct jacobiSOLVER final:public pSOLVER{
                     break;
                 }
             }
+          }
             // Data purposes.
             rinf=compINFNORM(phi,rhs,Nx,Ny,dx,dy);
             applyNeumannBC(phi,Nx,Ny);
             return pSolverINFO{it,rinf};
-        }
-    }
+      }
 };
 
 /*
@@ -535,21 +535,19 @@ struct Simulation {
       /*
       Recall, data is in the center of the cell with origin (dx/2,dy/2).
       */
-      out<<"VTK DataFile\n";
-      out<<"ASCII\n";
-      out<<"DATASET_POINTS\n";
-      out<<"DIMENSIONS "<<simOBJ.Nx<<" "<<simOBJ.Ny<<" 1\n";
-      out<<"ORIGIN "<<0.5*dx<<" "<<0.5*dy<<" 0\n";
-      out<<"SPACING "<<dx<<" "<<dy<<" 1\n";
-      out<<"POINT_DATA "<<(simOBJ.Nx*simOBJ.Ny)<<"\n";
-      // This is cell centered pressure.
-      out<<"SCALARS pressure double 1\n";
-      out<<"LOOKUP_TABLE default\n";
-      for(int j=1;j<=simOBJ.Ny;j++){
-          for(int i=1;i<=simOBJ.Nx;i++){
-              out<<p(i,j)<<"\n";
-          }
-      }
+      out << "# vtk DataFile Version 2.0\n"; 
+      out << "Lid-driven cavity\n"; 
+      out << "ASCII\n"; 
+      out << "DATASET STRUCTURED_POINTS\n"; 
+      out << "DIMENSIONS " << simOBJ.Nx << " " << simOBJ.Ny << " 1\n"; 
+      out << "ORIGIN " << 0.5 * dx << " " << 0.5 * dy << " 0\n"; 
+      out << "SPACING " << dx << " " << dy << " 1\n"; 
+      out << "POINT_DATA " << (simOBJ.Nx * simOBJ.Ny) << "\n"; 
+      out << "SCALARS pressure double 1\n"; 
+      out << "LOOKUP_TABLE default\n"; 
+      for (int j = 1; j <= simOBJ.Ny; ++j) 
+      for (int i = 1; i <= simOBJ.Nx; ++i) 
+      out << p(i, j) << "\n"; 
       /*
       This is explicitly for visualization in PARAVIEW. We are converting staggered 
       MAC velocities to cell centered velocities by averaging neighbouring grid values.

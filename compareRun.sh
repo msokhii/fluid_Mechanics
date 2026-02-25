@@ -4,7 +4,7 @@ set -euo pipefail
 # =========================
 # User settings (edit these)
 # =========================
-EXE="./cavity"
+EXE="./OP"
 SRC="solver.cpp"
 
 RE=400
