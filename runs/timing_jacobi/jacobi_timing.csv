@@ -1,0 +1,7 @@
+N,Re,solver,avgtimeStepec,avgPoissonSec,avgStepCycles,avgPoissonCycles,avgPoissonIters,avgPoissonResInf,avgPoissonMaxDelta,maxDiv
+SUMMARY N=32 Re=400.000000 solver=jacobi avgtimeStepec=0.008189 avgPoissonSec=0.008158 avgStepCycles=26961269.853333 avgPoissonCycles=26859274.573333 avgPoissonIters=3054.000000 avgPoissonResInf=0.000096 avgPoissonMaxDelta=0.000000 maxDiv=0.000001
+32,400.000000,jacobi,0.008189,0.008158,26961269.853333,26859274.573333,3054.000000,0.000096,0.000000,0.000001
+SUMMARY N=64 Re=400.000000 solver=jacobi avgtimeStepec=0.136578 avgPoissonSec=0.136454 avgStepCycles=449657111.431667 avgPoissonCycles=449250428.758333 avgPoissonIters=12312.250000 avgPoissonResInf=0.000099 avgPoissonMaxDelta=0.000000 maxDiv=0.000001
+64,400.000000,jacobi,0.136578,0.136454,449657111.431667,449250428.758333,12312.250000,0.000099,0.000000,0.000001
+SUMMARY N=128 Re=400.000000 solver=jacobi avgtimeStepec=1.411115 avgPoissonSec=1.410612 avgStepCycles=4645833182.928333 avgPoissonCycles=4644173840.808333 avgPoissonIters=30000.000000 avgPoissonResInf=0.001787 avgPoissonMaxDelta=0.000000 maxDiv=0.000008
+128,400.000000,jacobi,1.411115,1.410612,4645833182.928333,4644173840.808333,30000.000000,0.001787,0.000000,0.000008

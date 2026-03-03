@@ -201,6 +201,7 @@ Keeping track of number of iterations for each poisson solve.
 struct pSolverINFO{
     int iters=0;
     double res_inf=0.0;
+    double maxDelta=0.0;   // max |phi^{k+1}-phi^k| from the last sweep
 };
 
 /*
@@ -221,68 +222,82 @@ struct pSOLVER{
 My implementation for the Jacobi method to solve the pressure poisson equation.
 */
 
-struct jacobiSOLVER final:public pSOLVER{
-    string name() const override{ 
-        return "jacobi"; 
-    }
-    pSolverINFO solve(Field &phi,const Field &rhs,
-                     int Nx,int Ny,double dx,double dy,
-                     int maxIters,double tol,
-                     int checkEvery) override{
-        Field next(phi.nx,phi.ny,0.0);
-        // Precomputation for speed.
-        /*
-        Note, we are solving: 
-        phi[i,j]=((phi_E+phi_W)/dx^2+(phi_N+phi_S)/dy^2-RHS[i,j])/2*(1/dx^2+1/dy^2). This is 
-        the denom below.
-        */
-        const double invdx2=1.0/(dx*dx);
-        const double invdy2=1.0/(dy*dy);
-        const double denom=2.0*(invdx2+invdy2);
+struct jacobiSOLVER final : public pSOLVER {
+    Field next; // reused buffer to avoid realloc every timestep
+
+    string name() const override { return "jacobi"; }
+
+    pSolverINFO solve(Field &phi, const Field &rhs,
+                      int Nx, int Ny, double dx, double dy,
+                      int maxIters, double tol,
+                      int checkEvery) override {
+
+        // Ensure next has correct size (phi includes ghost cells)
+        if (next.nx != phi.nx || next.ny != phi.ny) {
+            next.resize(phi.nx, phi.ny, 0.0);
+        }
+
+        const double invdx2 = 1.0 / (dx * dx);
+        const double invdy2 = 1.0 / (dy * dy);
+        const double denom  = 2.0 * (invdx2 + invdy2);
+
         applyNeumannBC(phi, Nx, Ny);
         imposeUNQ(phi, Nx, Ny);
-        double rinf=compINFNORM(phi,rhs,Nx,Ny,dx,dy);
-        double maxDelta=0.0;
-        int it=0;
-        for(int k=1;k<=maxIters;k++){
-            /*
-            During each iteration, we impose Neumann BC's on the current PHI. 
-            */
-            it=k;
-            applyNeumannBC(phi,Nx,Ny);
-            // Jacobi update formula referenced.
-            for(int j=1;j<=Ny;j++){
-                for(int i=1;i<=Nx;i++){
-                    next(i,j)=((phi(i+1,j)+phi(i-1,j))*invdx2
-                    +(phi(i,j+1)+phi(i,j-1))*invdy2-rhs(i,j))/denom;
+
+        double rinf = std::numeric_limits<double>::infinity();
+        double maxDelta = 0.0;
+        int it = 0;
+
+        // How often to remove the constant nullspace drift:
+        // tying it to checkEvery is convenient and cheap.
+        const int gaugeEvery = (checkEvery > 0 ? checkEvery : 50);
+
+        for (int k = 1; k <= maxIters; ++k) {
+            it = k;
+
+            applyNeumannBC(phi, Nx, Ny);
+
+            // Jacobi update into next
+            for (int j = 1; j <= Ny; ++j) {
+                for (int i = 1; i <= Nx; ++i) {
+                    next(i, j) =
+                        ((phi(i+1, j) + phi(i-1, j)) * invdx2 +
+                         (phi(i, j+1) + phi(i, j-1)) * invdy2 -
+                         rhs(i, j)) / denom;
                 }
             }
-            // Now, we do phi=next and measure the largest change.
+
+            // swap/update + max change
             maxDelta = 0.0;
-            for(int j=1;j<=Ny;j++){
-                for(int i=1;i<=Nx;i++){
-                    double d=abs(next(i,j)-phi(i,j));
-                    maxDelta=max(maxDelta,d);
-                    phi(i,j)=next(i,j);
+            for (int j = 1; j <= Ny; ++j) {
+                for (int i = 1; i <= Nx; ++i) {
+                    double d = std::abs(next(i, j) - phi(i, j));
+                    if (d > maxDelta) maxDelta = d;
+                    phi(i, j) = next(i, j);
                 }
             }
-            imposeUNQ(phi,Nx,Ny);
-            applyNeumannBC(phi,Nx,Ny);
-            /*
-            This is a bottleneck so only do it after x iterations.
-            */
-            if(checkEvery>0 &&(it%checkEvery==0)){
-                rinf=compINFNORM(phi,rhs,Nx,Ny,dx,dy);
-                if(rinf<tol){
-                    break;
-                }
+
+            // Occasionally fix the Neumann nullspace (mean-zero); gradients unaffected.
+            if (gaugeEvery > 0 && (it % gaugeEvery == 0)) {
+                imposeUNQ(phi, Nx, Ny);
             }
-          }
-            // Data purposes.
-            rinf=compINFNORM(phi,rhs,Nx,Ny,dx,dy);
-            applyNeumannBC(phi,Nx,Ny);
-            return pSolverINFO{it,rinf};
-      }
+
+            applyNeumannBC(phi, Nx, Ny);
+
+            // Residual check (expensive): only every checkEvery iterations
+            if (checkEvery > 0 && (it % checkEvery == 0)) {
+                rinf = compINFNORM(phi, rhs, Nx, Ny, dx, dy);
+                if (rinf < tol) break;
+            }
+        }
+
+        // Final cleanup + final residual
+        imposeUNQ(phi, Nx, Ny);
+        applyNeumannBC(phi, Nx, Ny);
+        rinf = compINFNORM(phi, rhs, Nx, Ny, dx, dy);
+
+        return pSolverINFO{it, rinf, maxDelta};
+    }
 };
 
 /*
@@ -292,58 +307,69 @@ My implementation for the SOR method to solve the pressure poisson equation.
 // IGNORING THIS FOR NOW.
 
 struct PoissonSOR final : public pSOLVER {
-  double omega = 1.7;
-  explicit PoissonSOR(double w) : omega(w) {}
-  std::string name() const override { return "sor"; }
+    double omega = 1.7;
+    explicit PoissonSOR(double w) : omega(w) {}
+    std::string name() const override { return "sor"; }
 
-  pSolverINFO solve(Field &phi, const Field &rhs,
-                     int Nx, int Ny, double dx, double dy,
-                     int maxIters, double tol,
-                     int checkEvery) override {
-    const double invdx2 = 1.0 / (dx * dx);
-    const double invdy2 = 1.0 / (dy * dy);
-    const double denom  = 2.0 * (invdx2 + invdy2);
+    pSolverINFO solve(Field &phi, const Field &rhs,
+                      int Nx, int Ny, double dx, double dy,
+                      int maxIters, double tol,
+                      int checkEvery) override {
 
-    applyNeumannBC(phi, Nx, Ny);
-    imposeUNQ(phi, Nx, Ny);
+        const double invdx2 = 1.0 / (dx * dx);
+        const double invdy2 = 1.0 / (dy * dy);
+        const double denom  = 2.0 * (invdx2 + invdy2);
 
-    double rinf = compINFNORM(phi, rhs, Nx, Ny, dx, dy);
-    double maxDelta = 0.0;
-    int it = 0;
+        applyNeumannBC(phi, Nx, Ny);
+        imposeUNQ(phi, Nx, Ny);
 
-    for (int k = 1; k <= maxIters; ++k) {
-      it = k;
-      applyNeumannBC(phi, Nx, Ny);
+        double rinf = std::numeric_limits<double>::infinity();
+        double maxDelta = 0.0;
+        int it = 0;
 
-      maxDelta = 0.0;
-      for (int j = 1; j <= Ny; ++j) {
-        for (int i = 1; i <= Nx; ++i) {
-          double xold = phi(i, j);
-          double xnew =
-            ( (phi(i+1, j) + phi(i-1, j)) * invdx2
-            + (phi(i, j+1) + phi(i, j-1)) * invdy2
-            - rhs(i, j) ) / denom;
+        const int gaugeEvery = (checkEvery > 0 ? checkEvery : 50);
 
-          double xr = (1.0 - omega) * xold + omega * xnew;
-          maxDelta = std::max(maxDelta, std::abs(xr - xold));
-          phi(i, j) = xr;
+        for (int k = 1; k <= maxIters; ++k) {
+            it = k;
+
+            applyNeumannBC(phi, Nx, Ny);
+
+            maxDelta = 0.0;
+            for (int j = 1; j <= Ny; ++j) {
+                for (int i = 1; i <= Nx; ++i) {
+                    double xold = phi(i, j);
+
+                    double xnew =
+                        ((phi(i+1, j) + phi(i-1, j)) * invdx2 +
+                         (phi(i, j+1) + phi(i, j-1)) * invdy2 -
+                         rhs(i, j)) / denom;
+
+                    double xr = (1.0 - omega) * xold + omega * xnew;
+                    double d  = std::abs(xr - xold);
+                    if (d > maxDelta) maxDelta = d;
+
+                    phi(i, j) = xr;
+                }
+            }
+
+            if (gaugeEvery > 0 && (it % gaugeEvery == 0)) {
+                imposeUNQ(phi, Nx, Ny);
+            }
+
+            applyNeumannBC(phi, Nx, Ny);
+
+            if (checkEvery > 0 && (it % checkEvery == 0)) {
+                rinf = compINFNORM(phi, rhs, Nx, Ny, dx, dy);
+                if (rinf < tol) break;
+            }
         }
-      }
 
-      imposeUNQ(phi, Nx, Ny);
-      applyNeumannBC(phi, Nx, Ny);
-
-      if (checkEvery > 0 && (it % checkEvery == 0)) {
+        imposeUNQ(phi, Nx, Ny);
+        applyNeumannBC(phi, Nx, Ny);
         rinf = compINFNORM(phi, rhs, Nx, Ny, dx, dy);
-        if (rinf < tol) break;
-      }
+
+        return pSolverINFO{it, rinf, maxDelta};
     }
-
-    rinf = compINFNORM(phi, rhs, Nx, Ny, dx, dy);
-    applyNeumannBC(phi, Nx, Ny);
-
-    return pSolverINFO{it, rinf};
-  }
 };
 
 /*
@@ -525,42 +551,60 @@ struct Simulation {
   PARAVIEW COMMANDS:
   */
 
-  void opVTK(int frame)const{
-      if(!simOBJ.writeVtk){return;}
-      fs::create_directories(simOBJ.vtkDir);
-      ostringstream fn;
-      fn<<simOBJ.vtkDir<<"/out_"<<std::setw(6)<<std::setfill('0')<<frame<<".vtk";
-      ofstream out(fn.str());
-      if(!out){return;}
-      /*
-      Recall, data is in the center of the cell with origin (dx/2,dy/2).
-      */
-      out << "# vtk DataFile Version 2.0\n"; 
-      out << "Lid-driven cavity\n"; 
-      out << "ASCII\n"; 
-      out << "DATASET STRUCTURED_POINTS\n"; 
-      out << "DIMENSIONS " << simOBJ.Nx << " " << simOBJ.Ny << " 1\n"; 
-      out << "ORIGIN " << 0.5 * dx << " " << 0.5 * dy << " 0\n"; 
-      out << "SPACING " << dx << " " << dy << " 1\n"; 
-      out << "POINT_DATA " << (simOBJ.Nx * simOBJ.Ny) << "\n"; 
-      out << "SCALARS pressure double 1\n"; 
-      out << "LOOKUP_TABLE default\n"; 
-      for (int j = 1; j <= simOBJ.Ny; ++j) 
-      for (int i = 1; i <= simOBJ.Nx; ++i) 
-      out << p(i, j) << "\n"; 
-      /*
-      This is explicitly for visualization in PARAVIEW. We are converting staggered 
-      MAC velocities to cell centered velocities by averaging neighbouring grid values.
-      */
-      out<<"VECTORS velocity double\n";
-      for(int j=1;j<=simOBJ.Ny;j++){
-          for(int i=1;i<=simOBJ.Nx;i++){
-              double uc=0.5*(u(i,j)+u(i-1,j));
-              double vc=0.5*(v(i,j)+v(i,j-1));
-              out<<uc<<" "<<vc<<" 0\n";
-          }
-      }
-  }
+  void opVTK(int frame) const {
+    if (!simOBJ.writeVtk) { return; }
+    fs::create_directories(simOBJ.vtkDir);
+
+    ostringstream fn;
+    fn << simOBJ.vtkDir << "/out_" << std::setw(6) << std::setfill('0') << frame << ".vtk";
+    ofstream out(fn.str());
+    if (!out) { return; }
+
+    out << "# vtk DataFile Version 2.0\n";
+    out << "Lid-driven cavity\n";
+    out << "ASCII\n";
+    out << "DATASET STRUCTURED_POINTS\n";
+    out << "DIMENSIONS " << simOBJ.Nx << " " << simOBJ.Ny << " 1\n";
+    out << "ORIGIN " << 0.5 * dx << " " << 0.5 * dy << " 0\n";
+    out << "SPACING " << dx << " " << dy << " 1\n";
+    out << "POINT_DATA " << (simOBJ.Nx * simOBJ.Ny) << "\n";
+
+    // --- pressure (mean-zero for visualization) ---
+    double psum = 0.0;
+    for (int j = 1; j <= simOBJ.Ny; ++j)
+        for (int i = 1; i <= simOBJ.Nx; ++i)
+            psum += p(i, j);
+    double pmean = psum / (double)(simOBJ.Nx * simOBJ.Ny);
+
+    out << "SCALARS pressure double 1\n";
+    out << "LOOKUP_TABLE default\n";
+    for (int j = 1; j <= simOBJ.Ny; ++j)
+        for (int i = 1; i <= simOBJ.Nx; ++i)
+            out << (p(i, j) - pmean) << "\n";
+
+    // --- phi (also mean-zero; diagnostic) ---
+    double phisum = 0.0;
+    for (int j = 1; j <= simOBJ.Ny; ++j)
+        for (int i = 1; i <= simOBJ.Nx; ++i)
+            phisum += phi(i, j);
+    double phimean = phisum / (double)(simOBJ.Nx * simOBJ.Ny);
+
+    out << "SCALARS phi double 1\n";
+    out << "LOOKUP_TABLE default\n";
+    for (int j = 1; j <= simOBJ.Ny; ++j)
+        for (int i = 1; i <= simOBJ.Nx; ++i)
+            out << (phi(i, j) - phimean) << "\n";
+
+    // --- velocity (cell-centered via averaging) ---
+    out << "VECTORS velocity double\n";
+    for (int j = 1; j <= simOBJ.Ny; ++j) {
+        for (int i = 1; i <= simOBJ.Nx; ++i) {
+            double uc = 0.5 * (u(i, j) + u(i - 1, j));
+            double vc = 0.5 * (v(i, j) + v(i, j - 1));
+            out << uc << " " << vc << " 0\n";
+        }
+    }
+}
   // Cell centered sampling from MAC.
   inline double uc(int i,int j)const{
       return 0.5*(u(i,j)+u(i-1,j)); 
@@ -757,7 +801,6 @@ struct Simulation {
     }
 
     // ---- Solve Poisson ----
-    phi.fillVec(0.0);
     Timer tP; tP.start();
     uint64_t c0 = rdtsc_serialized();
 
@@ -822,15 +865,16 @@ struct Simulation {
       double timeStepecLocal = tS.seconds();
 
       if (n > simOBJ.warmupTS) {
-        ++timed;
-        timeStepecSum += timeStepecLocal;
-        poissonSecSum += poissonSecLocal;
-        stepCycSum += (s1 - s0);
-        poissonCycSum += poissonCycLocal;
+    ++timed;
+    timeStepecSum += timeStepecLocal;
+    poissonSecSum += poissonSecLocal;
+    stepCycSum += (s1 - s0);
+    poissonCycSum += poissonCycLocal;
 
-        itSum += pst.iters;
-        resSum += pst.res_inf;
-      }
+    itSum  += pst.iters;
+    resSum += pst.res_inf;
+    dltSum += pst.maxDelta;   // <-- add this
+}
 
       if (n % 50 == 0) {
         std::cerr << "step " << n

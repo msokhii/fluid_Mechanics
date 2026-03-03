@@ -1,0 +1,7 @@
+N,Re,solver,avgtimeStepec,avgPoissonSec,avgStepCycles,avgPoissonCycles,avgPoissonIters,avgPoissonResInf,avgPoissonMaxDelta,maxDiv
+SUMMARY N=32 Re=400.000000 solver=sor avgtimeStepec=0.002721 avgPoissonSec=0.002691 avgStepCycles=8958436.313333 avgPoissonCycles=8859301.046667 avgPoissonIters=300.000000 avgPoissonResInf=0.000008 avgPoissonMaxDelta=0.000000 maxDiv=0.000000
+32,400.000000,sor,0.002721,0.002691,8958436.313333,8859301.046667,300.000000,0.000008,0.000000,0.000000
+SUMMARY N=64 Re=400.000000 solver=sor avgtimeStepec=0.031729 avgPoissonSec=0.031606 avgStepCycles=104460527.406667 avgPoissonCycles=104057255.373333 avgPoissonIters=792.833333 avgPoissonResInf=0.000054 avgPoissonMaxDelta=0.000000 maxDiv=0.000000
+64,400.000000,sor,0.031729,0.031606,104460527.406667,104057255.373333,792.833333,0.000054,0.000000,0.000000
+SUMMARY N=128 Re=400.000000 solver=sor avgtimeStepec=0.408780 avgPoissonSec=0.408280 avgStepCycles=1345833269.981667 avgPoissonCycles=1344185381.701667 avgPoissonIters=2414.083333 avgPoissonResInf=0.000090 avgPoissonMaxDelta=0.000000 maxDiv=0.000000
+128,400.000000,sor,0.408780,0.408280,1345833269.981667,1344185381.701667,2414.083333,0.000090,0.000000,0.000000
