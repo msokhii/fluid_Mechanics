@@ -32,6 +32,7 @@ namespace fs=filesystem; //Alias.
 /*
 Checks for CPU clock cycles for the entire time step(Poisson solve) 
 only if we are in x86-64, otherwise returns 0 (No cycle counts).
+I am testing this on Fedora so this returns 0.
 */
 
 #if defined(__x86_64__)||defined(_M_X64)
@@ -117,6 +118,19 @@ Basically, given RHS(i,j) everywhere we want to find phi(i,j) such that the
 discrete laplacian of phi equals those values.
 */
 
+
+/* 
+Function signature: 
+
+Applied Neumann BC to q i.e. partial(q)/partial(n)=0 on all walls. 
+Left GC=First interior column.
+Right GC=Last interior column.
+Bottom GC=First interior row. 
+Top GC=Last interior row.
+
+The above makes the normal derivative approx = 0.
+
+*/
 static inline void applyNeumannBC(Field &q,int Nx,int Ny){
   /*
   We are enforcing ghost cells on left,right,top and bottom. Note, 
@@ -144,7 +158,8 @@ static inline void applyNeumannBC(Field &q,int Nx,int Ny){
 
 /*
 We want a unique solution. Recall for a Neumann poisson equation, if phi is a solution
-then so is phi+C. We impose uniqueness by requiring Mean(phi)=0.
+then so is phi+C. We impose uniqueness by requiring Mean(phi)=0. Essentially, fixing the
+nullspace 'drift'. 
 */
 
 static inline void imposeUNQ(Field &q,int Nx,int Ny){
@@ -172,6 +187,7 @@ r[i,j]=b[i,j]-lap(x[i,j]) and OP's max(abs(r[i,j])).
 
 LAP is the 5 point stencil we are using. Explicitly: 
 
+I think there some typo for this formula.
 lap(x)=(x[i+1,j]-2*x[i-1,j])/dx^2+(x[i,j+1]-2*x[i,j]+x[i,j-1])/dy^2.
 */
 
@@ -220,6 +236,8 @@ struct pSOLVER{
 
 /*
 My implementation for the Jacobi method to solve the pressure poisson equation.
+
+All this does is as follows. From the 5 point LAP stencil above we get:
 */
 
 struct jacobiSOLVER final : public pSOLVER {
@@ -376,6 +394,8 @@ struct PoissonSOR final : public pSOLVER {
 My main struct to run all simulations.
 */
 
+// Initialized with default values. 
+
 struct runSim{
   int Nx=128; 
   int Ny=128;
@@ -500,6 +520,8 @@ struct Simulation {
     }
   }
 
+  // Interpolation helpers. Averaging v from nearby cells when updating u.
+
   inline double v_at_u(int i, int j, const Field &vv) const {
     // u(i,j) at (x=i*dx, y=(j-0.5)dy)
     return 0.25 * (vv(i, j) + vv(i+1, j) + vv(i, j-1) + vv(i+1, j-1));
@@ -509,14 +531,18 @@ struct Simulation {
     // v(i,j) at (x=(i-0.5)dx, y=j*dy)
     return 0.25 * (uu(i, j) + uu(i, j+1) + uu(i-1, j) + uu(i-1, j+1));
   }
+  
+  // Upwind derivatives. 
 
   inline double ddx_upwind(double qm1, double q0, double qp1, double vel, double h) const {
-    return (vel > 0.0) ? (q0 - qm1) / h : (qp1 - q0) / h;
+    return (vel > 0.0) ? (q0 - qm1) / h : (qp1 - q0) / h; // Backward diff else forward.
   }
 
   inline double ddy_upwind(double qm1, double q0, double qp1, double vel, double h) const {
     return (vel > 0.0) ? (q0 - qm1) / h : (qp1 - q0) / h;
   }
+  
+  // Compute the timestep. 
 
   double compute_dt() const {
     if (simOBJ.fixedDt) return simOBJ.dtFixed;
@@ -534,7 +560,11 @@ struct Simulation {
     double dt_diff = (nu > 0.0) ? 0.25 * (hmin * hmin) / nu : simOBJ.dtMax;
     return std::min(simOBJ.dtMax, std::min(dt_adv, dt_diff));
   }
-
+  
+  /* 
+  max(i,j) abs.(u(i,j)-u(i-1,j)/dx+v(i,j)-v(i,j-1)/dy)
+  Pred: After projection we should expect this to be small.
+  */
   double max_divergence() const {
     double md = 0.0;
     for (int j = 1; j <= simOBJ.Ny; ++j) {
@@ -737,6 +767,26 @@ struct Simulation {
   }
 
   // One step. Returns pSolverINFO; also reports Poisson timing/cycles.
+
+/*
+  
+Details for a single iteration: 
+
+1. Apply VBC(u,v) and call computeDT() (This is for current velocities).
+2. Predict u*. For each interior u face we get:
+u0=u(i,j).
+vAtU=(i,j,v) -> This is the interpolation step. Then we compute advection and 
+diffusion which is: 
+dudx=upwind in x.
+dudy=upwind in y.
+adv=u0*dudx+v0*dudy -> Non linear terms. 
+Delta(u)=der^2*x+der^2*y.
+3. Predict v*. We use the same idea as we did for u*. 
+4. Apply UBC(us,uv).
+5. Build the poisson RHS. We want delta(phi)=1/dt(Lap dot u) and we actually have 
+1/dt(u*(i,j)-u*(i-1,j)/dx+v*(i,j)-v*(i-1,j)/dy).
+6. Actually solve this. Correct the velocities. Update pressure. Apply VBC. Swap values.
+*/
   pSolverINFO step_once(double &dt,
                          double &poissonSec, uint64_t &poissonCycles) {
     applyVBC(u, v);
