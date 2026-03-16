@@ -1,52 +1,36 @@
-function runq5spotHW4_opt
-    clc; close all;
+function optAlpha
+    clc; 
+    close all;
     
-    % Sample alpha values for optimization
-    alphaVals = linspace(0,1,21);
-    PoVals    = zeros(size(alphaVals));
-    
-    for k = 1:length(alphaVals)
+    alphaVals=linspace(0,1,20);
+    pNoTVals= zeros(size(alphaVals));
+    for k=1:length(alphaVals)
         alpha = alphaVals(k);
-        [PoVals(k), Tt, Ftot, SwFinal, PFinal, xplot, yplot, Grid, Tend] = simulateQuarterFiveSpot(alpha, false);
-    
-        fprintf('alpha = %.3f,  P_o = %.6f\n', alpha, PoVals(k));
+        [pNoTVals(k),~,~,~,~,~,~,~,~]=simulateQuarterFiveSpot(alpha,false);
+        fprintf('Alpha value = %.3f & P_0 value = %.6f\n',alpha,pNoTVals(k));
     end
-    
-    % Find optimal alpha
-    [PoMax, idx] = max(PoVals);
+    [PoMax, idx] = max(pNoTVals);
     alphaOpt = alphaVals(idx);
+    fprintf('\nOptimal value of alpha = %.6f\n',alphaOpt);
+    fprintf('Maximum total oil production P_0 with alpha value of %.6f = %.6f\n',PoMax,alphaOpt);
     
-    fprintf('\nOptimal alpha = %.6f\n', alphaOpt);
-    fprintf('Maximum total oil production P_o = %.6f\n', PoMax);
-    
-    % Plot P_o versus alpha
+    % Plotting.
     figure;
-    plot(alphaVals, PoVals, 'o-', 'LineWidth', 1.5, 'MarkerSize', 7);
+    plot(alphaVals,pNoTVals,'o-','LineWidth',2.0,'MarkerSize',7);
     grid on;
-    xlabel('\alpha');
-    ylabel('Total oil production P_o');
-    title('Optimization of total oil production');
+    xlabel('Alpha value');
+    ylabel('P_0');
+    title('Optimized production');
     hold on;
-    plot(alphaOpt, PoMax, 'rs', 'MarkerSize', 10, 'LineWidth', 1.5);
-    legend('P_o(\alpha)', sprintf('Optimal \\alpha = %.3f', alphaOpt), 'Location', 'best');
-    
-    % Re-run optimal case and display solution plots
-    [PoOpt, Tt, Ftot, SwFinal, PFinal, xplot, yplot, Grid, Tend] = simulateQuarterFiveSpot(alphaOpt, true);
-    
-    fprintf('\nOptimal run complete:\n');
-    fprintf('alphaOpt = %.6f,  P_o = %.6f\n', alphaOpt, PoOpt);
-    
+    plot(alphaOpt,PoMax,'rs','MarkerSize',10,'LineWidth',1.5);
+    legend('P_0(alpha)',sprintf('Optimal value of alpha = %.3f',alphaOpt),'Location','best');
+    [~,~,~,~,~,~,~,~,~]=simulateQuarterFiveSpot(alphaOpt,true);
     end
     
-    
-    function [Po, Tt, Ftot, Sfinal, Pfinal, xplot, yplot, Grid, Tend] = simulateQuarterFiveSpot(alpha, doPlot)
-    
-    % ============================================================
-    % Grid and physical parameters
-    % ============================================================
-    Grid.Nx = 64; 
-    Dx = 2; 
-    Grid.hx = Dx/Grid.Nx;          % doubled x-length
+    function[Po,Tt,Ftot,Sfinal,Pfinal,xplot,yplot,Grid,Tend]=simulateQuarterFiveSpot(alpha,doPlot)
+        Grid.Nx = 64; 
+        Dx = 2; 
+        Grid.hx = Dx/Grid.Nx;     
     
     Grid.Ny = 64; 
     Dy = 1; 
